@@ -330,14 +330,19 @@
 
         function showModal(id) {
             const modalEl = document.getElementById(id);
-            const modal = new bootstrap.Modal(modalEl);
+            let modal = bootstrap.Modal.getInstance(modalEl);
+            if (!modal) {
+                modal = new bootstrap.Modal(modalEl);
+            }
             modal.show();
         }
 
         function hideModal(id) {
             const modalEl = document.getElementById(id);
             const modal = bootstrap.Modal.getInstance(modalEl);
-            if (modal) modal.hide();
+            if (modal) {
+                modal.hide();
+            }
         }
 
     </script>
