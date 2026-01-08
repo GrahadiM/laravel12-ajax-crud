@@ -53,7 +53,7 @@ class CategoryController extends Controller
      */
     public function store(Request $request)
     {
-        request()->validate([
+        $request->validate([
             'name' => 'required|max:255',
             'description' => 'required',
         ]);
@@ -90,7 +90,7 @@ class CategoryController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        request()->validate([
+        $request->validate([
             'name' => 'required|max:255',
             'description' => 'required',
         ]);

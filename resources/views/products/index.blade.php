@@ -19,7 +19,9 @@
                         <tr>
                             <th>Name</th>
                             <th>Slug</th>
-                            <th>Description</th>
+                            <th>Price</th>
+                            <th>Quantity</th>
+                            <th>Status</th>
                             <th width="240px">Action</th>
                         </tr>
                     </thead>
@@ -44,15 +46,43 @@
                     <div id="error-div"></div>
                     <form>
                         <input type="hidden" name="update_id" id="update_id">
-                        <div class="form-group">
-                            <label for="name">Name</label>
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Name</label>
                             <input type="text" class="form-control" id="name" name="name">
                         </div>
-                        <div class="form-group">
-                            <label for="description">Description</label>
-                            <textarea class="form-control" id="description" rows="3" name="description"></textarea>
+                        <div class="mb-3">
+                            <label for="category_id" class="form-label">Category</label>
+                            <select class="form-select" id="category_id" name="category_id">
+                                <option value="">Select Category</option>
+                                @foreach ($categories as $category)
+                                    <option value="{{ $category->id }}">{{ $category->name }}</option>
+                                @endforeach
+                            </select>
                         </div>
-                        <button type="submit" class="btn btn-outline-primary mt-3" id="save-data-btn">Save Data</button>
+                        <div class="mb-3">
+                            <label for="price" class="form-label">Price</label>
+                            <input type="number" class="form-control" id="price" name="price">
+                        </div>
+                        <div class="mb-3">
+                            <label for="quantity" class="form-label">Quantity</label>
+                            <input type="number" class="form-control" id="quantity" name="quantity">
+                        </div>
+                        <div class="mb-3">
+                            <label for="status" class="form-label">Status</label>
+                            <select class="form-select" id="status" name="status">
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="short_description" class="form-label">Short Description</label>
+                            <textarea class="form-control" id="short_description" rows="2" name="short_description"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" rows="4" name="description"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-outline-primary mt-2" id="save-data-btn">Save Product</button>
                     </form>
                 </div>
             </div>
@@ -70,6 +100,18 @@
                 <div class="modal-body">
                     <b>Name:</b>
                     <p id="name-info"></p>
+                    <b>Category:</b>
+                    <p id="category-info"></p>
+                    <b>Slug:</b>
+                    <p id="slug-info"></p>
+                    <b>Price:</b>
+                    <p id="price-info"></p>
+                    <b>Quantity:</b>
+                    <p id="quantity-info"></p>
+                    <b>Status:</b>
+                    <p id="status-info"></p>
+                    <b>Short Description:</b>
+                    <p id="short-description-info"></p>
                     <b>Description:</b>
                     <p id="description-info"></p>
                 </div>
@@ -113,7 +155,7 @@
 
         $(function() {
             var baseUrl = $('meta[name=app-url]').attr("content");
-            let url = baseUrl + '/api/categories';
+            let url = baseUrl + '/api/products';
             // create a datatable
             $('#datas_table').DataTable({
                 processing: true,
@@ -126,7 +168,9 @@
                 columns: [
                     { data: 'name' },
                     { data: 'slug' },
-                    { data: 'description' },
+                    { data: 'price' },
+                    { data: 'quantity' },
+                    { data: 'status' },
                     { data: 'action' },
                 ],
             });
@@ -160,6 +204,11 @@
             $("#error-div").html("");
             $("#update_id").val("");
             $("#name").val("");
+            $("#category_id").val("");
+            $("#price").val("");
+            $("#quantity").val("");
+            $("#status").val("active");
+            $("#short_description").val("");
             $("#description").val("");
             showModal('form-modal');
         }
@@ -169,9 +218,14 @@
         */
         function storeData() {
             $("#save-data-btn").prop('disabled', true);
-            let url = $('meta[name=app-url]').attr("content") + "/api/categories";
+            let url = $('meta[name=app-url]').attr("content") + "/api/products";
             let data = {
                 name: $("#name").val(),
+                category_id: $("#category_id").val(),
+                price: $("#price").val(),
+                quantity: $("#quantity").val(),
+                status: $("#status").val(),
+                short_description: $("#short_description").val(),
                 description: $("#description").val(),
             };
             $.ajax({
@@ -187,29 +241,22 @@
                         '<div class="alert alert-success" role="alert"><b>Data Created Successfully</b></div>';
                     $("#alert-div").html(successHtml);
                     $("#name").val("");
+                    $("#category_id").val("");
+                    $("#price").val("");
+                    $("#quantity").val("");
+                    $("#status").val("active");
+                    $("#short_description").val("");
                     $("#description").val("");
                     reloadTable();
                     hideModal('form-modal');
                 },
                 error: function(response) {
                     $("#save-data-btn").prop('disabled', false);
-                    if (typeof response.responseJSON.errors !== 'undefined') {
-                        let errors = response.responseJSON.errors;
-                        let descriptionValidation = "";
-                        if (typeof errors.description !== 'undefined') {
-                            descriptionValidation = '<li>' + errors.description[0] + '</li>';
-                        }
-                        let nameValidation = "";
-                        if (typeof errors.name !== 'undefined') {
-                            nameValidation = '<li>' + errors.name[0] + '</li>';
-                        }
-
-                        let errorHtml = '<div class="alert alert-danger" role="alert">' +
-                            '<b>Validation Error!</b>' +
-                            '<ul>' + nameValidation + descriptionValidation + '</ul>' +
-                            '</div>';
-                        $("#error-div").html(errorHtml);
-                    }
+                    let errors = response.responseJSON.errors || {};
+                    let errorHtml = '<div class="alert alert-danger"><b>Validation Error!</b><ul>';
+                    for (let field in errors) errorHtml += '<li>' + errors[field][0] + '</li>';
+                    errorHtml += '</ul></div>';
+                    $("#error-div").html(errorHtml);
                 }
             });
         }
@@ -219,7 +266,7 @@
             it will get the existing value and show the data form
         */
         function editData(id) {
-            let url = $('meta[name=app-url]').attr("content") + "/api/categories/" + id;
+            let url = $('meta[name=app-url]').attr("content") + "/api/products/" + id;
             $.ajax({
                 url: url,
                 type: "GET",
@@ -229,6 +276,11 @@
                     $("#error-div").html("");
                     $("#update_id").val(data.id);
                     $("#name").val(data.name);
+                    $("#category_id").val(data.category_id);
+                    $("#price").val(data.price);
+                    $("#quantity").val(data.quantity);
+                    $("#status").val(data.status);
+                    $("#short_description").val(data.short_description);
                     $("#description").val(data.description);
                     showModal('form-modal');
                 },
@@ -243,10 +295,15 @@
         */
         function updateData() {
             $("#save-data-btn").prop('disabled', true);
-            let url = $('meta[name=app-url]').attr("content") + "/api/categories/" + $("#update_id").val();
+            let url = $('meta[name=app-url]').attr("content") + "/api/products/" + $("#update_id").val();
             let data = {
                 id: $("#update_id").val(),
                 name: $("#name").val(),
+                category_id: $("#category_id").val(),
+                price: $("#price").val(),
+                quantity: $("#quantity").val(),
+                status: $("#status").val(),
+                short_description: $("#short_description").val(),
                 description: $("#description").val(),
             };
             $.ajax({
@@ -262,29 +319,22 @@
                         '<div class="alert alert-success" role="alert"><b>Data Updated Successfully</b></div>';
                     $("#alert-div").html(successHtml);
                     $("#name").val("");
+                    $("#category_id").val("");
+                    $("#price").val("");
+                    $("#quantity").val("");
+                    $("#status").val("active");
+                    $("#short_description").val("");
                     $("#description").val("");
                     reloadTable();
                     hideModal('form-modal');
                 },
                 error: function(response) {
                     $("#save-data-btn").prop('disabled', false);
-                    if (typeof response.responseJSON.errors !== 'undefined') {
-                        let errors = response.responseJSON.errors;
-                        let descriptionValidation = "";
-                        if (typeof errors.description !== 'undefined') {
-                            descriptionValidation = '<li>' + errors.description[0] + '</li>';
-                        }
-                        let nameValidation = "";
-                        if (typeof errors.name !== 'undefined') {
-                            nameValidation = '<li>' + errors.name[0] + '</li>';
-                        }
-
-                        let errorHtml = '<div class="alert alert-danger" role="alert">' +
-                            '<b>Validation Error!</b>' +
-                            '<ul>' + nameValidation + descriptionValidation + '</ul>' +
-                            '</div>';
-                        $("#error-div").html(errorHtml);
-                    }
+                    let errors = response.responseJSON.errors || {};
+                    let errorHtml = '<div class="alert alert-danger"><b>Validation Error!</b><ul>';
+                    for (let field in errors) errorHtml += '<li>' + errors[field][0] + '</li>';
+                    errorHtml += '</ul></div>';
+                    $("#error-div").html(errorHtml);
                 }
             });
         }
@@ -294,14 +344,26 @@
         */
         function showData(id) {
             $("#name-info").html("");
+            $("#slug-info").html("");
+            $("#category-info").html("");
+            $("#price-info").html("");
+            $("#quantity-info").html("");
+            $("#status-info").html("");
+            $("#short-description-info").html("");
             $("#description-info").html("");
-            let url = $('meta[name=app-url]').attr("content") + "/api/categories/" + id + "";
+            let url = $('meta[name=app-url]').attr("content") + "/api/products/" + id + "";
             $.ajax({
                 url: url,
                 type: "GET",
                 success: function(response) {
                     let data = response.data;
                     $("#name-info").html(data.name);
+                    $("#slug-info").html(data.slug);
+                    $("#category-info").html(data.category.name);
+                    $("#price-info").html(data.price);
+                    $("#quantity-info").html(data.quantity);
+                    $("#status-info").html(data.status);
+                    $("#short-description-info").html(data.short_description);
                     $("#description-info").html(data.description);
                     showModal('view-modal');
 
@@ -316,26 +378,15 @@
             delete record function
         */
         function destroyData(id) {
-            let url = $('meta[name=app-url]').attr("content") + "/api/categories/" + id;
-            let data = {
-                name: $("#name").val(),
-                description: $("#description").val(),
-            };
+            if (!confirm("Are you sure you want to delete this product?")) return;
+            let url = $('meta[name=app-url]').attr("content") + "/api/products/" + id;
             $.ajax({
-                headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                },
+                headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
                 url: url,
                 type: "DELETE",
-                data: data,
-                success: function(response) {
-                    let successHtml =
-                        '<div class="alert alert-success" role="alert"><b>Data Deleted Successfully</b></div>';
-                    $("#alert-div").html(successHtml);
+                success: function() {
+                    $("#alert-div").html('<div class="alert alert-success"><b>Product Deleted Successfully</b></div>');
                     reloadTable();
-                },
-                error: function(response) {
-                    console.log(response.responseJSON)
                 }
             });
         }
