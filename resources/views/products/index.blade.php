@@ -114,6 +114,8 @@
                     <p id="short-description-info"></p>
                     <b>Description:</b>
                     <p id="description-info"></p>
+                    <b>QR Code:</b> <br>
+                    <img id="qr-code-info" src="" alt="QR Code" class="img-fluid mt-2" style="max-width:200px;">
                 </div>
             </div>
         </div>
@@ -351,6 +353,7 @@
             $("#status-info").html("");
             $("#short-description-info").html("");
             $("#description-info").html("");
+            $("#qr-code-info").html("");
             let url = $('meta[name=app-url]').attr("content") + "/api/products/" + id + "";
             $.ajax({
                 url: url,
@@ -365,6 +368,7 @@
                     $("#status-info").html(data.status);
                     $("#short-description-info").html(data.short_description);
                     $("#description-info").html(data.description);
+                    $('#qr-code-info').attr('src', response.data.qrcode_url);
                     showModal('view-modal');
 
                 },

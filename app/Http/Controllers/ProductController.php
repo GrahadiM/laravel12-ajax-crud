@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use Yajra\DataTables\Facades\DataTables;
 
 class ProductController extends Controller
@@ -90,6 +92,26 @@ class ProductController extends Controller
     public function show(string $id)
     {
         $data = Product::with('category')->findOrFail($id);
+
+        // buat data QR Code
+        // $dataToEncode = json_encode([
+        //     'id' => $data->id,
+        //     'name' => $data->name,
+        //     'url' => route('products.show', $data->id)
+        // ]);
+
+        // buat link QR Code
+        $dataToEncode = route('products.show', $data->id);
+
+        // generate QR Code
+        $qrCode = QrCode::format('png')->size(300)->generate($dataToEncode);
+
+        // simpan sebagai file PNG
+        $qrImageName = 'qr_' . $data->id . '.png';
+        Storage::put('qr/' . $qrImageName, $qrCode);
+
+        // simpan path QR Code
+        $data->qrcode_url = Storage::url('qr/' . $qrImageName);
 
         return response()->json(['data' => $data]);
     }
